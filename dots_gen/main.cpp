@@ -3,6 +3,7 @@
 #include <random>
 #include <cmath>
 #include <sstream>
+#include <chrono>
 
 #include <cxxopts.hpp>
 
@@ -171,20 +172,24 @@ int main(int argc, char ** argv)
   random_device rd;
   default_random_engine eng {rd()};
 //  default_random_engine eng {};
-  uniform_real_distribution<double> rand {-1, 1};
+  uniform_real_distribution<double> rand_for_center {-1, 1};
   uniform_real_distribution<double> rand_rad {min_rad, max_rad};
   uniform_real_distribution<double> rand_color {0, 1};
   uniform_int_distribution<uint> rand_dots {min_dots, max_dots};
+
+  auto begin = chrono::steady_clock::now();
 
   for(size_t i = 0; i < clusters_count; ++i)
   {
     vector<double> dots;
     for(size_t k = 0; k < DIM; ++k)
     {
-      dots.push_back(rand(eng));
+      dots.push_back(rand_for_center(eng));
     }
     clusters.push_back((genCluster(Point(dots), rand_rad(eng), rand_dots(eng), Color(rand_color(eng),rand_color(eng),rand_color(eng)))));
   }
+
+  auto end = chrono::steady_clock::now();
 
   if (DIM <= 2){
     GLinit(argc, argv);
