@@ -4,6 +4,7 @@
 #include <cmath>
 #include <sstream>
 #include <chrono>
+#include <thread>
 
 #include <cxxopts.hpp>
 
@@ -11,8 +12,6 @@
 #include <GL/glut.h>
 
 using namespace std;
-
-static size_t DIM = 2;
 
 struct Color
 {
@@ -29,6 +28,15 @@ struct Point
   {
     c = c_;
   }
+  double dist(const Point & p) const
+  {
+    double res = 0;
+    for(size_t i = 0; i < p.c.size(); ++i)
+    {
+      res += pow(c[i] - p.c[i], 2);
+    }
+    return sqrt(res);
+  }
 
   vector<double> c;
 };
@@ -39,57 +47,54 @@ struct Cluster
   Point center;
   vector<Point> points;
   Color color;
+  double radius;
 };
 
 
 static vector<Cluster> clusters;
+static random_device rd;
+static default_random_engine eng (rd());
 
-double mult1(const double d, const size_t dim, const size_t n, const vector<double> & angles)
-{
-  double res = d;
-
-  if(n == 0)
-  {
-    res *= cos(angles[n]);
-    return res;
-  }
-  res *= sin(angles[n]) * mult1(res, dim, n - 1, angles);
-  return 0;
-}
-
-Cluster genCluster(const Point center, const double radius, const uint count, const Color color)
+Cluster genCluster(const Point center, const double radius, const uint count, const Color color, const size_t DIM)
 {
   Cluster cluster {};
   cluster.center = center;
+  cluster.radius = radius;
 
-  random_device rd;
-  default_random_engine eng {rd()};
   uniform_real_distribution<double> rand {0, 1};
 
   for(uint ccount = 0; ccount < count; ++ccount)
   {
     vector<double> angles;
 
-    for(size_t i = 0; i < DIM; ++i)
+    for(size_t i = 0; i < DIM - 1; ++i)
     {
-      angles.push_back(rand(eng) * 2 * 3.14159265359);
+      angles.push_back(rand(eng) * 3.14159265359);
     }
-    double r = radius * sqrt(rand(eng));
+    angles[0] *= 2;
+//    double r = radius * sqrt(rand(eng));
+    double r = radius * rand(eng);
 
     Point p;
 
     for(size_t xi = 0; xi < DIM; ++xi)
     {
-      p.c.push_back(r);
-      p.c.back() *= mult1(p.c.back(), DIM, xi, angles);
-      p.c.back() += center.c[xi];
-    }
+      double to_p = r;
+      for(size_t kk = xi; kk < DIM - 1; ++kk)
+      {
+        to_p *= sin(angles[kk]);
+      }
+      if(xi == 0)
+      {
+      } else {
+        to_p *= cos(angles[xi - 1]);
+      }
 
-    p.c.back() = *(p.c.end() - 2);
-    p.c.back() -= center.c[p.c.size() - 2];
-    p.c.back() /= cos(angles[0]);
-    p.c.back() *= sin(angles[0]);
-    p.c.back() += center.c[p.c.size() - 1];
+      to_p += center.c[xi];
+
+      p.c.push_back(to_p);
+
+    }
 
     cluster.points.push_back(p);
   }
@@ -106,7 +111,7 @@ void GLinit(int argc, char ** argv)
   glutInitWindowSize(1000, 900);
   glutInitWindowPosition(100, 100);
   glutCreateWindow("MyOpenGL");
-  glClearColor(1,1,1,1);
+  glClearColor(1, 1, 1, 1);
   glPointSize(3);
 }
 
@@ -114,6 +119,8 @@ void GLdisplay()
 {
   glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
+  glPointSize(3);
+  char i = 0;
   for(auto & c : clusters)
   {
     glColor3d(c.color.r, c.color.g, c.color.b);
@@ -121,25 +128,42 @@ void GLdisplay()
     glBegin(GL_POINTS);
     for (auto & p : c.points)
     {
-      if (p.c.size() == 1)
-      {
-        glVertex2d(*(p.c.end() - 1), 0);
-      }else {
-        glVertex2d(*(p.c.end() - 2), *(p.c.end() - 1));
-      }
-
-//      glVertex2d(*(p.c.end() - 1), *(p.c.end() - 2));
+      glVertex2d(p.c[0], p.c[1]);
     }
 
-    glColor3d(1, 1, 1);
-//    glVertex2d(c.center.c[1], c.center.c[0]);
+    glColor3d(0, 0, 0);
     glVertex2d(c.center.c[0], c.center.c[1]);
     glEnd();
-
+    glRasterPos2d(c.center.c[0], c.center.c[1]);
+    glutBitmapCharacter(GLUT_BITMAP_9_BY_15, i+48);
+    ++i;
   }
 
-  glutPostRedisplay();
-  glutSwapBuffers();
+  glColor3d(0,0,0);
+  glPointSize(7);
+  glBegin(GL_POINTS);
+  glVertex2d(0, 0);
+  glVertex2d(0.25, 0);
+  glVertex2d(0.5, 0);
+  glVertex2d(0.75, 0);
+  glVertex2d(-0.25, 0);
+  glVertex2d(-0.5, 0);
+  glVertex2d(-0.75, 0);
+  glVertex2d(0, 0.25);
+  glVertex2d(0, 0.5);
+  glVertex2d(0, 0.75);
+  glVertex2d(0, -0.25);
+  glVertex2d(0, -0.5);
+  glVertex2d(0, -0.75);
+  glEnd();
+
+  static bool redisp = true;
+  if (redisp)
+  {
+    glutPostRedisplay();
+    glutSwapBuffers();
+    redisp = false;
+  }
 }
 
 void GLkeybord(unsigned char, int, int)
@@ -151,27 +175,26 @@ int main(int argc, char ** argv)
 {
   cxxopts::Options opts ("dots_gen", "");
   opts.add_options()
-      ("clusters",  "Clusters count",             cxxopts::value<size_t>()->    default_value("10"))
+      ("clusters",  "Clusters count",             cxxopts::value<size_t>()->    default_value("2"))
       ("dim",       "Dimensions",                 cxxopts::value<size_t>()->    default_value("2"))
-      ("min_dots",  "Min dots in cluster",        cxxopts::value<uint32_t>()->  default_value("100"))
-      ("max_dots",  "Max dots in cluster",        cxxopts::value<uint32_t>()->  default_value("1000"))
+      ("min_dots",  "Min dots in cluster",        cxxopts::value<uint32_t>()->  default_value("10"))
+      ("max_dots",  "Max dots in cluster",        cxxopts::value<uint32_t>()->  default_value("10"))
       ("min_rad",   "Min radius of cluster",      cxxopts::value<double>()->    default_value("0.2"))
-      ("max_rad",   "Max radius of cluster",      cxxopts::value<double>()->    default_value("0.7"))
+      ("max_rad",   "Max radius of cluster",      cxxopts::value<double>()->    default_value("0.5"))
       ;
   auto opt_res = opts.parse(argc, argv);
-  if(opt_res.arguments().size() == 0)
-    cout << opts.help() << endl;
+  // без этого одинаковые значения в нулевом кластере (???)
+//  if(opt_res.arguments().size() == 0)
+  cout << opts.help() << endl;
 
   size_t clusters_count = opt_res["clusters"].as<size_t>();
-  DIM = opt_res["dim"].as<size_t>();
+  size_t DIM = opt_res["dim"].as<size_t>();
+  if (DIM == 1) throw invalid_argument("can't do it in 1-dim");
   uint32_t min_dots = opt_res["min_dots"].as<uint32_t>();
   uint32_t max_dots = opt_res["max_dots"].as<uint32_t>();
   double min_rad = opt_res["min_rad"].as<double>();
   double max_rad = opt_res["max_rad"].as<double>();
 
-  random_device rd;
-  default_random_engine eng {rd()};
-//  default_random_engine eng {};
   uniform_real_distribution<double> rand_for_center {-1, 1};
   uniform_real_distribution<double> rand_rad {min_rad, max_rad};
   uniform_real_distribution<double> rand_color {0, 1};
@@ -186,10 +209,19 @@ int main(int argc, char ** argv)
     {
       dots.push_back(rand_for_center(eng));
     }
-    clusters.push_back((genCluster(Point(dots), rand_rad(eng), rand_dots(eng), Color(rand_color(eng),rand_color(eng),rand_color(eng)))));
+    clusters.push_back((genCluster(Point(dots), rand_rad(eng), rand_dots(eng), Color(rand_color(eng),rand_color(eng),rand_color(eng)), DIM)));
   }
 
   auto end = chrono::steady_clock::now();
+
+  cout << "generating: " << chrono::duration_cast<chrono::milliseconds>(end - begin).count() << " msec" << endl;
+
+  int i = 0;
+  for(auto & c: clusters)
+  {
+    cout << i << ": " << c.points.size() << " " << c.center.c[0] << ":" << c.center.c[1] << " " << c.radius << endl;
+    ++i;
+  }
 
   if (DIM <= 2){
     GLinit(argc, argv);
