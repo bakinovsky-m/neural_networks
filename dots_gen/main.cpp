@@ -105,7 +105,7 @@ void GLinit(int argc, char ** argv)
   glutInitWindowSize(1000, 900);
   glutInitWindowPosition(100, 100);
   glutCreateWindow("MyOpenGL");
-  glClearColor(0,0,0,1);
+  glClearColor(1,1,1,1);
   glPointSize(3);
 }
 
@@ -150,6 +150,7 @@ int main(int argc, char ** argv)
 {
   cxxopts::Options opts ("dots_gen", "");
   opts.add_options()
+      ("clusters",  "Clusters count",             cxxopts::value<size_t>()->    default_value("10"))
       ("dim",       "Dimensions",                 cxxopts::value<size_t>()->    default_value("2"))
       ("min_dots",  "Min dots in cluster",        cxxopts::value<uint32_t>()->  default_value("100"))
       ("max_dots",  "Max dots in cluster",        cxxopts::value<uint32_t>()->  default_value("1000"))
@@ -160,8 +161,8 @@ int main(int argc, char ** argv)
   if(opt_res.arguments().size() == 0)
     cout << opts.help() << endl;
 
+  size_t clusters_count = opt_res["clusters"].as<size_t>();
   DIM = opt_res["dim"].as<size_t>();
-
   uint32_t min_dots = opt_res["min_dots"].as<uint32_t>();
   uint32_t max_dots = opt_res["max_dots"].as<uint32_t>();
   double min_rad = opt_res["min_rad"].as<double>();
@@ -175,7 +176,7 @@ int main(int argc, char ** argv)
   uniform_real_distribution<double> rand_color {0, 1};
   uniform_int_distribution<uint> rand_dots {min_dots, max_dots};
 
-  for(int i = 0; i < 10; ++i)
+  for(size_t i = 0; i < clusters_count; ++i)
   {
     vector<double> dots;
     for(size_t k = 0; k < DIM; ++k)
