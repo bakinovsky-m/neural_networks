@@ -1,21 +1,21 @@
 #include <iostream>
 #include <vector>
 #include <random>
-#include <array>
-#include <algorithm>
 #include <cmath>
-#include <functional>
+#include <sstream>
+
+#include <cxxopts.hpp>
 
 #include <GL/gl.h>
 #include <GL/glut.h>
 
 using namespace std;
 
-constexpr int DIM = 2;
+static size_t DIM = 2;
 
 struct Color
 {
-  Color() : r(0), g(0), b(0) {};
+  Color() : r(0), g(0), b(0) {}
   Color(double r_, double g_, double b_) : r(r_), g(g_), b(b_) {}
 
   double r, g, b;
@@ -24,11 +24,6 @@ struct Color
 struct Point
 {
   Point() = default;
-//  Point(double x_, double y_)
-//  {
-//    c.push_back(x_);
-//    c.push_back(y_);
-//  }
   Point(vector<double> c_)
   {
     c = c_;
@@ -48,7 +43,7 @@ struct Cluster
 
 static vector<Cluster> clusters;
 
-double mult1(const double d, const int dim, const int n, const vector<double> & angles)
+double mult1(const double d, const size_t dim, const size_t n, const vector<double> & angles)
 {
   double res = d;
 
@@ -58,6 +53,7 @@ double mult1(const double d, const int dim, const int n, const vector<double> & 
     return res;
   }
   res *= sin(angles[n]) * mult1(res, dim, n - 1, angles);
+  return 0;
 }
 
 Cluster genCluster(const Point center, const double radius, const uint count, const Color color)
@@ -73,14 +69,13 @@ Cluster genCluster(const Point center, const double radius, const uint count, co
   {
     vector<double> angles;
 
-    for(size_t i = 0; i < DIM-1; ++i)
+    for(size_t i = 0; i < DIM; ++i)
     {
       angles.push_back(rand(eng) * 2 * 3.14159265359);
     }
     double r = radius * sqrt(rand(eng));
 
     Point p;
-
 
     for(size_t xi = 0; xi < DIM; ++xi)
     {
@@ -125,10 +120,18 @@ void GLdisplay()
     glBegin(GL_POINTS);
     for (auto & p : c.points)
     {
-      glVertex2d(*(p.c.end() - 2), *(p.c.end() - 1));
+      if (p.c.size() == 1)
+      {
+        glVertex2d(*(p.c.end() - 1), 0);
+      }else {
+        glVertex2d(*(p.c.end() - 2), *(p.c.end() - 1));
+      }
+
+//      glVertex2d(*(p.c.end() - 1), *(p.c.end() - 2));
     }
 
     glColor3d(1, 1, 1);
+//    glVertex2d(c.center.c[1], c.center.c[0]);
     glVertex2d(c.center.c[0], c.center.c[1]);
     glEnd();
 
@@ -138,29 +141,55 @@ void GLdisplay()
   glutSwapBuffers();
 }
 
+void GLkeybord(unsigned char, int, int)
+{
+  exit(0);
+}
+
 int main(int argc, char ** argv)
 {
-  GLinit(argc, argv);
-  glutDisplayFunc(GLdisplay);
+  cxxopts::Options opts ("dots_gen", "");
+  opts.add_options()
+      ("dim",       "Dimensions",                 cxxopts::value<size_t>()->    default_value("2"))
+      ("min_dots",  "Min dots in cluster",        cxxopts::value<uint32_t>()->  default_value("100"))
+      ("max_dots",  "Max dots in cluster",        cxxopts::value<uint32_t>()->  default_value("1000"))
+      ("min_rad",   "Min radius of cluster",      cxxopts::value<double>()->    default_value("0.2"))
+      ("max_rad",   "Max radius of cluster",      cxxopts::value<double>()->    default_value("0.7"))
+      ;
+  auto opt_res = opts.parse(argc, argv);
+  if(opt_res.arguments().size() == 0)
+    cout << opts.help() << endl;
+
+  DIM = opt_res["dim"].as<size_t>();
+
+  uint32_t min_dots = opt_res["min_dots"].as<uint32_t>();
+  uint32_t max_dots = opt_res["max_dots"].as<uint32_t>();
+  double min_rad = opt_res["min_rad"].as<double>();
+  double max_rad = opt_res["max_rad"].as<double>();
 
   random_device rd;
   default_random_engine eng {rd()};
 //  default_random_engine eng {};
   uniform_real_distribution<double> rand {-1, 1};
-  uniform_real_distribution<double> rand_rad {0.3, 0.5};
+  uniform_real_distribution<double> rand_rad {min_rad, max_rad};
   uniform_real_distribution<double> rand_color {0, 1};
-  uniform_int_distribution<int> rand_dots {10, 1000};
+  uniform_int_distribution<uint> rand_dots {min_dots, max_dots};
 
   for(int i = 0; i < 10; ++i)
   {
     vector<double> dots;
-    for(int k = 0; k < rand_dots(eng); ++k)
+    for(size_t k = 0; k < DIM; ++k)
     {
       dots.push_back(rand(eng));
     }
-    clusters.push_back((genCluster(Point(dots), rand_rad(eng), 1000, Color(rand_color(eng),rand_color(eng),rand_color(eng)))));
+    clusters.push_back((genCluster(Point(dots), rand_rad(eng), rand_dots(eng), Color(rand_color(eng),rand_color(eng),rand_color(eng)))));
   }
 
-  glutMainLoop();
+  if (DIM <= 2){
+    GLinit(argc, argv);
+    glutDisplayFunc(GLdisplay);
+    glutKeyboardFunc(GLkeybord);
+    glutMainLoop();
+  }
   return 0;
 }
