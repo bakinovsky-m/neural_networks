@@ -1,25 +1,22 @@
+#include <iostream>
 #include <vector>
 #include <random>
 #include <array>
 #include <algorithm>
 #include <cmath>
+#include <functional>
 
 #include <GL/gl.h>
 #include <GL/glut.h>
 
 using namespace std;
 
+constexpr int DIM = 2;
 
 struct Color
 {
-  Color() = default;
+  Color() : r(0), g(0), b(0) {};
   Color(double r_, double g_, double b_) : r(r_), g(g_), b(b_) {}
-//  Color & operator=(Color& c)
-//  {
-//    r = c.r;
-//    g = c.g;
-//    b = c.b;
-//  }
 
   double r, g, b;
 };
@@ -27,15 +24,23 @@ struct Color
 struct Point
 {
   Point() = default;
-  Point(double x_, double y_) : x(x_), y(y_) {}
-  double x = 0;
-  double y = 0;
-};
+//  Point(double x_, double y_)
+//  {
+//    c.push_back(x_);
+//    c.push_back(y_);
+//  }
+  Point(vector<double> c_)
+  {
+    c = c_;
+  }
 
+  vector<double> c;
+};
 
 struct Cluster
 {
   Cluster() = default;
+  Point center;
   vector<Point> points;
   Color color;
 };
@@ -43,23 +48,54 @@ struct Cluster
 
 static vector<Cluster> clusters;
 
+double mult1(const double d, const int dim, const int n, const vector<double> & angles)
+{
+  double res = d;
 
-Cluster genCluster(double center_x, double center_y, double radius, uint count, Color color = Color{})
+  if(n == 0)
+  {
+    res *= cos(angles[n]);
+    return res;
+  }
+  res *= sin(angles[n]) * mult1(res, dim, n - 1, angles);
+}
+
+Cluster genCluster(const Point center, const double radius, const uint count, const Color color)
 {
   Cluster cluster {};
+  cluster.center = center;
 
   random_device rd;
   default_random_engine eng {rd()};
   uniform_real_distribution<double> rand {0, 1};
 
-  for(uint i = 0; i < count; ++i)
+  for(uint ccount = 0; ccount < count; ++ccount)
   {
-    double a = rand(eng) * 2 * 3.14159265359;
+    vector<double> angles;
+
+    for(size_t i = 0; i < DIM-1; ++i)
+    {
+      angles.push_back(rand(eng) * 2 * 3.14159265359);
+    }
     double r = radius * sqrt(rand(eng));
 
-    double x = r * cos(a) + center_x;
-    double y = r * sin(a) + center_y;
-    cluster.points.push_back(Point(x, y));
+    Point p;
+
+
+    for(size_t xi = 0; xi < DIM; ++xi)
+    {
+      p.c.push_back(r);
+      p.c.back() *= mult1(p.c.back(), DIM, xi, angles);
+      p.c.back() += center.c[xi];
+    }
+
+    p.c.back() = *(p.c.end() - 2);
+    p.c.back() -= center.c[p.c.size() - 2];
+    p.c.back() /= cos(angles[0]);
+    p.c.back() *= sin(angles[0]);
+    p.c.back() += center.c[p.c.size() - 1];
+
+    cluster.points.push_back(p);
   }
 
   cluster.color = color;
@@ -67,8 +103,13 @@ Cluster genCluster(double center_x, double center_y, double radius, uint count, 
   return cluster;
 }
 
-void GLinit()
+void GLinit(int argc, char ** argv)
 {
+  glutInit(&argc, argv);
+  glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
+  glutInitWindowSize(1000, 900);
+  glutInitWindowPosition(100, 100);
+  glutCreateWindow("MyOpenGL");
   glClearColor(0,0,0,1);
   glPointSize(3);
 }
@@ -77,16 +118,20 @@ void GLdisplay()
 {
   glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
-  for(Cluster & c : clusters)
+  for(auto & c : clusters)
   {
     glColor3d(c.color.r, c.color.g, c.color.b);
 
     glBegin(GL_POINTS);
-    for (Point & p : c.points)
+    for (auto & p : c.points)
     {
-      glVertex2d(p.x, p.y);
+      glVertex2d(*(p.c.end() - 2), *(p.c.end() - 1));
     }
+
+    glColor3d(1, 1, 1);
+    glVertex2d(c.center.c[0], c.center.c[1]);
     glEnd();
+
   }
 
   glutPostRedisplay();
@@ -95,17 +140,26 @@ void GLdisplay()
 
 int main(int argc, char ** argv)
 {
-  glutInit(&argc, argv);
-  glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
-  glutInitWindowSize(1000, 900);
-  glutInitWindowPosition(100, 100);
-  glutCreateWindow("MyOpenGL");
-  GLinit();
+  GLinit(argc, argv);
   glutDisplayFunc(GLdisplay);
 
-  clusters.push_back((genCluster(0.1, 0.1, 0.2, 1000, Color(0,1,0))));
-  clusters.push_back((genCluster(-0.1, -0.2, 0.2, 1000, Color(0,0,1))));
-  clusters.push_back((genCluster(0.2, -0.2, 0.2, 1000, Color(1,0,0))));
+  random_device rd;
+  default_random_engine eng {rd()};
+//  default_random_engine eng {};
+  uniform_real_distribution<double> rand {-1, 1};
+  uniform_real_distribution<double> rand_rad {0.3, 0.5};
+  uniform_real_distribution<double> rand_color {0, 1};
+  uniform_int_distribution<int> rand_dots {10, 1000};
+
+  for(int i = 0; i < 10; ++i)
+  {
+    vector<double> dots;
+    for(int k = 0; k < rand_dots(eng); ++k)
+    {
+      dots.push_back(rand(eng));
+    }
+    clusters.push_back((genCluster(Point(dots), rand_rad(eng), 1000, Color(rand_color(eng),rand_color(eng),rand_color(eng)))));
+  }
 
   glutMainLoop();
   return 0;
