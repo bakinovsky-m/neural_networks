@@ -113,6 +113,7 @@ void GLinit(int argc, char ** argv)
   glutCreateWindow("MyOpenGL");
   glClearColor(1, 1, 1, 1);
   glPointSize(3);
+  glLineWidth(3);
 }
 
 void GLdisplay()
@@ -133,6 +134,10 @@ void GLdisplay()
 
     glColor3d(0, 0, 0);
     glVertex2d(c.center.c[0], c.center.c[1]);
+    glEnd();
+    glBegin(GL_LINES);
+    glVertex2d(c.center.c[0], c.center.c[1]);
+    glVertex2d(c.center.c[0] + c.radius, c.center.c[1]);
     glEnd();
     glRasterPos2d(c.center.c[0], c.center.c[1]);
     glutBitmapCharacter(GLUT_BITMAP_9_BY_15, i+48);
@@ -205,23 +210,61 @@ int main(int argc, char ** argv)
   for(size_t i = 0; i < clusters_count; ++i)
   {
     vector<double> dots;
-    for(size_t k = 0; k < DIM; ++k)
+    Point maybe_center;
+    double radius = 0;
+
+    bool found = false;
+    int counter = 0;
+    while(!found)
     {
-      dots.push_back(rand_for_center(eng));
+      counter++;
+      if (counter >= 100000)
+      {
+        cout << "plz, set smaller radius or less clusters, dimension is too small" << endl;
+        return -1;
+      }
+      dots.clear();
+      for(size_t k = 0; k < DIM; ++k)
+      {
+        dots.push_back(rand_for_center(eng));
+      }
+      maybe_center = Point(dots);
+      radius = rand_rad(eng);
+
+      found = true;
+      int j = 0;
+      for (auto &c : clusters)
+      {
+//        cout << "cluster " << i << " with ";
+//        cout << "cluster " << j << endl;
+//        cout << c.center.dist(maybe_center) << endl;
+        if (c.center.dist(maybe_center) <= c.radius + radius)
+        {
+//          cout << "ALARM! " << c.center.dist(maybe_center) << " <= " << c.radius << endl;
+          found = false;
+          break;
+        }
+        j++;
+      }
     }
-    clusters.push_back((genCluster(Point(dots), rand_rad(eng), rand_dots(eng), Color(rand_color(eng),rand_color(eng),rand_color(eng)), DIM)));
+
+//    clusters.push_back((genCluster(Point(dots), rand_rad(eng), rand_dots(eng), Color(rand_color(eng),rand_color(eng),rand_color(eng)), DIM)));
+    Cluster cl = genCluster(maybe_center, radius, rand_dots(eng), Color(rand_color(eng),rand_color(eng),rand_color(eng)), DIM);
+    clusters.push_back(cl);
+    cout << "clusters size: " << clusters.size() << "\r";
+    cout.flush();
   }
 
   auto end = chrono::steady_clock::now();
 
   cout << "generating: " << chrono::duration_cast<chrono::milliseconds>(end - begin).count() << " msec" << endl;
 
-  int i = 0;
-  for(auto & c: clusters)
-  {
-    cout << i << ": " << c.points.size() << " " << c.center.c[0] << ":" << c.center.c[1] << " " << c.radius << endl;
-    ++i;
-  }
+//  int i = 0;
+//  for(auto & c: clusters)
+//  {
+//    cout << i << ": " << c.points.size() << " " << c.center.c[0] << ":" << c.center.c[1] << " " << c.radius << endl;
+//    ++i;
+//  }
 
   if (DIM <= 2){
     GLinit(argc, argv);
