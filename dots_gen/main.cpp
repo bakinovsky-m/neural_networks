@@ -5,6 +5,7 @@
 #include <sstream>
 #include <chrono>
 #include <thread>
+#include <functional>
 
 #include <cxxopts.hpp>
 
@@ -119,11 +120,11 @@ int main(int argc, char ** argv)
 
     bool found = false;
     bool inter = false;
-    int counter = 0;
+    int failure_counter = 0;
     while(!found)
     {
-      counter++;
-      if (counter >= 100000)
+      failure_counter++;
+      if (failure_counter >= 100000)
       {
         cout << "plz, set smaller radius or less clusters, dimension is too small" << endl;
         return -1;
@@ -137,19 +138,42 @@ int main(int argc, char ** argv)
       radius = rand_rad(eng);
 
       found = true;
+      int j = 0;
       for (auto &c : clusters)
       {
         if (intersecs > 0)
         {
           if (!c.intersected)
           {
-            double intersection_len = radius * int_percent;
+            double intersection_len = (radius * int_percent + c.radius * int_percent) / 2;
             double out_rad = (c.radius + radius) - intersection_len;
 
             maybe_center = genPoint(c.center, out_rad);
+            function<bool(const Cluster&)> pred =
+                [&maybe_center, &radius, &c](const Cluster & inner_c) -> bool
+            {
+//              cout << maybe_center.c[0] << endl;
+              if(inner_c.center == c.center)
+              {
+//                cout << "found ne" << endl;
+                return false;
+              }
+              if (inner_c.center.dist(maybe_center) <= inner_c.radius + radius)
+              {
+                return true;
+              }
+              return false;
+            };
+            auto ff = find_if(clusters.begin(), clusters.end(), pred);
+            while(ff != clusters.end())
+            {
+              maybe_center = genPoint(c.center, out_rad);
+              ff = find_if(clusters.begin(), clusters.end(), pred);
+            }
             intersecs--;
             c.intersected = true;
             inter = true;
+            cout << "cluster " << i << " intersects with cluster " << j << endl;
             break;
           }
         } else
@@ -160,6 +184,7 @@ int main(int argc, char ** argv)
             break;
           }
         }
+        j++;
       }
     }
 
