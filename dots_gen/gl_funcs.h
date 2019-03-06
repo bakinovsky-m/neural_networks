@@ -27,7 +27,9 @@ void GLdisplay()
   glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
   glPointSize(3);
+#ifdef DRAW_EXTRA
   char i = 0;
+#endif // DRAW_EXTRA
   for(auto & c : clusters)
   {
     glColor3d(c.color.r, c.color.g, c.color.b);
@@ -41,6 +43,7 @@ void GLdisplay()
     glColor3d(0, 0, 0);
     glVertex2d(c.center.c[0], c.center.c[1]);
     glEnd();
+#ifdef DRAW_EXTRA
     glBegin(GL_LINES);
     glVertex2d(c.center.c[0], c.center.c[1]);
     glVertex2d(c.center.c[0] + c.radius, c.center.c[1]);
@@ -48,8 +51,10 @@ void GLdisplay()
     glRasterPos2d(c.center.c[0], c.center.c[1]);
     glutBitmapCharacter(GLUT_BITMAP_9_BY_15, i+48);
     ++i;
+#endif //DRAW_EXTRA
   }
 
+#ifdef DRAW_EXTRA
   glColor3d(0,0,0);
   glPointSize(7);
   glBegin(GL_POINTS);
@@ -67,6 +72,7 @@ void GLdisplay()
   glVertex2d(0, -0.5);
   glVertex2d(0, -0.75);
   glEnd();
+#endif //DRAW_EXTRA
 
   static bool redisp = true;
   if (redisp)

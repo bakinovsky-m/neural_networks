@@ -4,6 +4,8 @@
 #include <vector>
 #include <cmath>
 
+static constexpr double EPSILON = 0.000001;
+
 struct Color
 {
   Color() : r(0), g(0), b(0) {}
@@ -27,6 +29,15 @@ struct Point
       res += pow(c[i] - p.c[i], 2);
     }
     return sqrt(res);
+  }
+  bool operator==(const Point &p) const
+  {
+    for(size_t i = 0; i < c.size(); ++i)
+    {
+      if(fabs(c[i] - p.c[i]) > EPSILON)
+        return false;
+    }
+    return true;
   }
 
   std::vector<double> c;
