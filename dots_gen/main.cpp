@@ -6,6 +6,9 @@
 #include <chrono>
 #include <thread>
 #include <functional>
+#include <iomanip>
+#include <ctime>
+#include <fstream>
 
 #include <cxxopts.hpp>
 
@@ -81,14 +84,15 @@ int main(int argc, char ** argv)
 {
   cxxopts::Options opts ("dots_gen", "");
   opts.add_options()
-      ("clusters",  "Clusters count",                 cxxopts::value<size_t>()->    default_value("2"))
-      ("dim",       "Dimensions",                     cxxopts::value<size_t>()->    default_value("2"))
-      ("min_dots",  "Min dots in cluster",            cxxopts::value<uint32_t>()->  default_value("10"))
-      ("max_dots",  "Max dots in cluster",            cxxopts::value<uint32_t>()->  default_value("10"))
-      ("min_rad",   "Min radius of cluster",          cxxopts::value<double>()->    default_value("0.2"))
-      ("max_rad",   "Max radius of cluster",          cxxopts::value<double>()->    default_value("0.5"))
-      ("intersecs",   "Number of intersections",      cxxopts::value<uint32_t>()->    default_value("0"))
-      ("int_percent",   "Percent of intersections",   cxxopts::value<double>()->    default_value("0"))
+      ("clusters",      "Clusters count",                 cxxopts::value<size_t>()->    default_value("2"))
+      ("dim",           "Dimensions",                     cxxopts::value<size_t>()->    default_value("2"))
+      ("min_dots",      "Min dots in cluster",            cxxopts::value<uint32_t>()->  default_value("10"))
+      ("max_dots",      "Max dots in cluster",            cxxopts::value<uint32_t>()->  default_value("10"))
+      ("min_rad",       "Min radius of cluster",          cxxopts::value<double>()->    default_value("0.2"))
+      ("max_rad",       "Max radius of cluster",          cxxopts::value<double>()->    default_value("0.5"))
+      ("intersecs",     "Number of intersections",        cxxopts::value<uint32_t>()->  default_value("0"))
+      ("int_percent",   "Percent of intersections",       cxxopts::value<double>()->    default_value("0"))
+      ("save",          "Save to file")
       ;
   auto opt_res = opts.parse(argc, argv);
   // без этого одинаковые значения в нулевом кластере (???)
@@ -203,12 +207,33 @@ int main(int argc, char ** argv)
 
   cout << "generating: " << chrono::duration_cast<chrono::milliseconds>(end - begin).count() << " msec" << endl;
 
-//  int i = 0;
-//  for(auto & c: clusters)
-//  {
-//    cout << i << ": " << c.points.size() << " " << c.center.c[0] << ":" << c.center.c[1] << " " << c.radius << endl;
-//    ++i;
-//  }
+  if(opt_res.count("save") > 0)
+  {
+    auto t = std::time(nullptr);
+    auto tm = *std::localtime(&t);
+    ostringstream oss;
+    oss << std::put_time(&tm, "%d%m%Y_%H%M%S") << ".csv";
+    string filename = oss.str();
+
+    ofstream file (filename);
+    if(file)
+    {
+      for(auto & cl : clusters)
+      {
+        static uint64_t i = 0;
+        for(auto & p : cl.points)
+        {
+          file << i << ",";
+          for(auto x : p.c)
+          {
+            file << x << ",";
+          }
+          file << endl;
+        }
+        i++;
+      }
+    }
+  }
 
   if (DIM <= 2){
     GLinit(argc, argv);
