@@ -27,9 +27,6 @@ void GLdisplay()
   glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
   glPointSize(3);
-#ifdef DRAW_EXTRA
-  char i = 0;
-#endif // DRAW_EXTRA
   for(auto & c : clusters)
   {
     glColor3d(c.color.r, c.color.g, c.color.b);
@@ -48,9 +45,12 @@ void GLdisplay()
     glVertex2d(c.center.c[0], c.center.c[1]);
     glVertex2d(c.center.c[0] + c.radius, c.center.c[1]);
     glEnd();
+#ifdef __linux__
+    static int i = 0;
     glRasterPos2d(c.center.c[0], c.center.c[1]);
     glutBitmapCharacter(GLUT_BITMAP_9_BY_15, i+48);
     ++i;
+#endif //__linux__
 #endif //DRAW_EXTRA
   }
 
