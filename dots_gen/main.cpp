@@ -102,7 +102,7 @@ int main(int argc, char ** argv)
   double min_rad = opt_res["min_rad"].as<double>();
   double max_rad = opt_res["max_rad"].as<double>();
   uint32_t intersecs = opt_res["intersecs"].as<uint32_t>();
-  double int_percent = opt_res["int_percent"].as<double>();
+  double int_percent = opt_res["int_percent"].as<double>() / 100 * 2;
 
   uniform_real_distribution<double> rand_for_center {-1, 1};
   uniform_real_distribution<double> rand_rad {min_rad, max_rad};
@@ -118,6 +118,7 @@ int main(int argc, char ** argv)
     double radius = 0;
 
     bool found = false;
+    bool inter = false;
     int counter = 0;
     while(!found)
     {
@@ -136,23 +137,38 @@ int main(int argc, char ** argv)
       radius = rand_rad(eng);
 
       found = true;
-//      int j = 0;
       for (auto &c : clusters)
       {
-//        cout << "cluster " << i << " with ";
-//        cout << "cluster " << j << endl;
-//        cout << c.center.dist(maybe_center) << endl;
-        if (c.center.dist(maybe_center) <= c.radius + radius)
+        if (intersecs > 0)
         {
-//          cout << "ALARM! " << c.center.dist(maybe_center) << " <= " << c.radius << endl;
-          found = false;
-          break;
+          if (!c.intersected)
+          {
+            double intersection_len = radius * int_percent;
+            double out_rad = (c.radius + radius) - intersection_len;
+
+            maybe_center = genPoint(c.center, out_rad);
+            intersecs--;
+            c.intersected = true;
+            inter = true;
+            break;
+          }
+        } else
+        {
+          if (c.center.dist(maybe_center) <= c.radius + radius)
+          {
+            found = false;
+            break;
+          }
         }
-//        j++;
       }
     }
 
     Cluster cl = genCluster(maybe_center, radius, rand_dots(eng), Color(rand_color(eng),rand_color(eng),rand_color(eng)));
+    if(inter)
+    {
+      cl.intersected = true;
+      inter = false;
+    }
     clusters.push_back(cl);
     cout << "clusters size: " << clusters.size() << "\r";
     cout.flush();
