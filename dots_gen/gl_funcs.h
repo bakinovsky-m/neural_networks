@@ -2,6 +2,8 @@
 #define GL_FUNCS_H
 
 #include <vector>
+#include <thread>
+#include <chrono>
 
 #include <GL/gl.h>
 #include <GL/glut.h>
@@ -74,13 +76,9 @@ void GLdisplay()
   glEnd();
 #endif //DRAW_EXTRA
 
-  static bool redisp = true;
-  if (redisp)
-  {
-    glutPostRedisplay();
-    glutSwapBuffers();
-    redisp = false;
-  }
+  glutPostRedisplay();
+  glutSwapBuffers();
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }
 
 void GLkeybord(unsigned char, int, int)

@@ -80,6 +80,34 @@ Cluster genCluster(const Point &center, const double radius, const uint count, c
   return cluster;
 }
 
+void writeToFile()
+{
+  auto t = std::time(nullptr);
+  auto tm = *std::localtime(&t);
+  ostringstream oss;
+  oss << std::put_time(&tm, "%d%m%Y_%H%M%S") << ".csv";
+  string filename = oss.str();
+
+  ofstream file (filename);
+  if(file)
+  {
+    for(auto & cl : clusters)
+    {
+      static uint64_t i = 0;
+      for(auto & p : cl.points)
+      {
+        file << i << ",";
+        for(auto x : p.c)
+        {
+          file << x << ",";
+        }
+        file << endl;
+      }
+      i++;
+    }
+  }
+}
+
 int main(int argc, char ** argv)
 {
   cxxopts::Options opts ("dots_gen", "");
@@ -118,30 +146,30 @@ int main(int argc, char ** argv)
 
   for(size_t i = 0; i < clusters_count; ++i)
   {
-    vector<double> dots;
+    vector<double> center_coords;
     Point maybe_center;
     double radius = 0;
 
-    bool found = false;
+    bool found_intersec = false;
     bool inter = false;
-    int failure_counter = 0;
-    while(!found)
+    while(!found_intersec)
     {
+      static int failure_counter = 0;
       failure_counter++;
       if (failure_counter >= 100000)
       {
         cout << "plz, set smaller radius or less clusters, dimension is too small" << endl;
         return -1;
       }
-      dots.clear();
+      center_coords.clear();
       for(size_t k = 0; k < DIM; ++k)
       {
-        dots.push_back(rand_for_center(eng));
+        center_coords.push_back(rand_for_center(eng));
       }
-      maybe_center = Point(dots);
+      maybe_center = Point(center_coords);
       radius = rand_rad(eng);
 
-      found = true;
+      found_intersec = true;
       int j = 0;
       for (auto &c : clusters)
       {
@@ -156,10 +184,8 @@ int main(int argc, char ** argv)
             function<bool(const Cluster&)> pred =
                 [&maybe_center, &radius, &c](const Cluster & inner_c) -> bool
             {
-//              cout << maybe_center.c[0] << endl;
               if(inner_c.center == c.center)
               {
-//                cout << "found ne" << endl;
                 return false;
               }
               if (inner_c.center.dist(maybe_center) <= inner_c.radius + radius)
@@ -184,7 +210,7 @@ int main(int argc, char ** argv)
         {
           if (c.center.dist(maybe_center) <= c.radius + radius)
           {
-            found = false;
+            found_intersec = false;
             break;
           }
         }
@@ -209,30 +235,7 @@ int main(int argc, char ** argv)
 
   if(opt_res.count("save") > 0)
   {
-    auto t = std::time(nullptr);
-    auto tm = *std::localtime(&t);
-    ostringstream oss;
-    oss << std::put_time(&tm, "%d%m%Y_%H%M%S") << ".csv";
-    string filename = oss.str();
-
-    ofstream file (filename);
-    if(file)
-    {
-      for(auto & cl : clusters)
-      {
-        static uint64_t i = 0;
-        for(auto & p : cl.points)
-        {
-          file << i << ",";
-          for(auto x : p.c)
-          {
-            file << x << ",";
-          }
-          file << endl;
-        }
-        i++;
-      }
-    }
+    writeToFile();
   }
 
   if (DIM <= 2){
