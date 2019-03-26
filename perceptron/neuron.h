@@ -15,7 +15,6 @@ struct Neuron
 struct FirstLayerNeuron : Neuron
 {
   FirstLayerNeuron(const double v) : value(v) {}
-  void set_value(const double v);
 
   virtual double output() override;
 
@@ -29,9 +28,10 @@ struct HiddenNeuron : Neuron
 
   virtual double output() override;
 
+  void renewFl(const std::vector<std::shared_ptr<FirstLayerNeuron>> neurons);
+
   std::vector<std::shared_ptr<Neuron>> inputs;
   std::vector<double> weights;
-//  double err = 0;
 };
 
 #endif // HG_NEURON_H

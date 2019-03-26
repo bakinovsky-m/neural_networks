@@ -3,6 +3,7 @@
 #include <vector>
 #include <cmath>
 #include <random>
+#include <iostream>
 
 using namespace std;
 
@@ -29,6 +30,7 @@ HiddenNeuron::HiddenNeuron(const vector<shared_ptr<Neuron>> v){
 
 double HiddenNeuron::output()
 {
+//  cout << "hid: " << inputs.size() << endl;
   double res = 0;
   for(size_t i = 0; i < inputs.size(); ++i)
   {
@@ -37,9 +39,13 @@ double HiddenNeuron::output()
   return sigma(res);
 }
 
-void FirstLayerNeuron::set_value(const double v)
+void HiddenNeuron::renewFl(const std::vector<std::shared_ptr<FirstLayerNeuron>> neurons)
 {
-  value = v;
+  inputs.clear();
+  for(auto el : neurons)
+  {
+    inputs.push_back(el);
+  }
 }
 
 double FirstLayerNeuron::output()

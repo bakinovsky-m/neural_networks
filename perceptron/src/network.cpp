@@ -33,6 +33,12 @@ void Network::setInput(const std::vector<double> &inp)
     fns_v.push_back(make_shared<FirstLayerNeuron>(el));
   }
   fl = FirstLayer(fns_v);
+  HiddenLayer & hl = static_cast<HiddenLayer&>(layers.front());
+  for(auto el : hl.neurons)
+  {
+    shared_ptr<HiddenNeuron> h = dynamic_pointer_cast<HiddenNeuron>(el);
+    h->renewFl(fns_v);
+  }
 }
 
 void Network::addLayer(const size_t neurons_count)
@@ -55,7 +61,10 @@ void Network::run()
 {
   for(size_t i = 0; i < output.size(); ++i)
   {
-    output[i] = layers.back().neurons[i]->output();
+    auto l = layers.back();
+    shared_ptr<Neuron> n = l.neurons[i];
+    double out = n->output();
+    output[i] = out;
   }
 }
 
@@ -67,57 +76,35 @@ double Network::err(const std::vector<double> true_ans) const
   for(size_t i = 0; i < output.size(); ++i)
   {
     double tmp_res = layers.back().neurons[i]->output();
-    res += pow(true_ans[i] - tmp_res, 2);
+    res += pow(true_ans[i] - tmp_res, 2) * 0.5;
   }
-  return res * 0.5;
+  return res;
 }
 
-void Network::train(const std::vector<double> true_output, const double nu)
+double Network::train(const std::vector<double> true_output, const double nu)
 {
-  double last_layer_err = err(true_output);
-  for(auto & nn : layers.back().neurons)
-  {
-    auto n = dynamic_pointer_cast<HiddenNeuron>(nn);
-    n->err = last_layer_err;
-  }
+  double err_total = 0;
+  HiddenLayer & hl = layers.back();
+  size_t i = 0;
+  vector<double> errors;
 
-  auto r = layers.rend();
-  for(auto it = layers.rbegin(); it != r; ++it)
+  for(auto n = hl.neurons.begin(); n != hl.neurons.end(); ++n, ++i)
   {
-    for(auto nn : it->neurons)
+    shared_ptr<HiddenNeuron> nn = dynamic_pointer_cast<HiddenNeuron>(*n);
+
+    double n_out = nn->output();
+    double err_i = 0.5 * pow(true_output[i] - n_out, 2);
+    errors.push_back(err_i);
+    err_total += err_i;
+
+    double gamma = -(true_output[i] - n_out) * n_out * (1 - n_out);
+    size_t j = 0;
+    for(auto w = nn->weights.begin(); w != nn->weights.end(); ++w, ++j)
     {
-      auto n = dynamic_pointer_cast<HiddenNeuron>(nn);
-      size_t i = 0;
-      for(auto inner_nn : n->inputs)
-      {
-        inner_nn->err += n->err * n->weights[i++];
-      }
+      double out_w = nn->inputs[j]->output();
+      double delta = nu * gamma * out_w;
+      *w -= delta;
     }
   }
-
-  for(auto &l : layers)
-  {
-    for(auto nn : l.neurons)
-    {
-      auto n = dynamic_pointer_cast<HiddenNeuron>(nn);
-      for(size_t i = 0; i < n->inputs.size(); ++i)
-      {
-        double e = 0;
-        for(size_t j = 0; j < n->inputs.size(); ++j)
-        {
-          e += n->weights[j]*true_output[j];
-        }
-        n->weights[i] += nu * n->err * true_output[i] * sigma(e, true);
-      }
-    }
-  }
-
-  for(auto &l : layers)
-  {
-    for(auto nn : l.neurons)
-    {
-      auto n = dynamic_pointer_cast<HiddenNeuron>(nn);
-      n->err = 0;
-    }
-  }
+  return err_total;
 }

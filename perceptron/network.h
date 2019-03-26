@@ -16,7 +16,7 @@ struct Network
   void run();
   double err(const std::vector<double> true_ans) const;
 
-  void train(const std::vector<double> true_output, const double nu);
+  double train(const std::vector<double> true_output, const double nu);
 
   std::vector<double> input;
   std::vector<double> output;
