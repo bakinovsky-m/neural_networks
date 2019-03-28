@@ -2,7 +2,6 @@
 #include <vector>
 #include <memory>
 #include <random>
-//#include <thread>
 #include <chrono>
 
 #include "neuron.h"
@@ -17,7 +16,7 @@ static default_random_engine rand_eng(rd());
 
 int main()
 {
-//  uniform_real_distribution<double> rand (0,100);
+//  uniform_real_distribution<double> rand (0.0001,1);
   uniform_int_distribution<int> rand (0,1);
 
 //  FLN fl {1};
@@ -32,24 +31,27 @@ int main()
   auto begin = chrono::steady_clock::now();
 
   uint64_t counterr = 0;
-  while(true && counterr++ <= 10000)
+  while(true && counterr <= 10000)
   {
-    static size_t counter = 0;
-    int cur_v1 = rand(rand_eng);
-    int cur_v2 = rand(rand_eng);
-//    cout << cur_v1 << " " << cur_v2 << endl;
-    vector<double> v {(double)cur_v1, (double)cur_v2};
+//    int cur_v1 = rand(rand_eng);
+    double cur_v1 = rand(rand_eng);
+//    int cur_v2 = rand(rand_eng);
+    double cur_v2 = rand(rand_eng);
+    vector<double> v {cur_v1, cur_v2};
     n.setInput(v);
 
-//    double true_ans = (cur_v1 == 1 && cur_v2 == 1) ? 1.0 : 0;
-    double true_ans = 0;
-    if(cur_v1 == 1 && cur_v2 == 1)
-      true_ans = 1;
+    double true_ans = (cur_v1 == 1 && cur_v2 == 1) ? 1.0 : 0;
+//    double true_ans = 0;
+//    if((int)cur_v1 == 1 && (int)cur_v2 == 1)
+//      true_ans = 1;
+//    if(cur_v1 + cur_v2 < 0.001)
+//      true_ans = 1;
     double err = n.train({true_ans}, 1);
+//    double err = n.train(v, 0.1);
 
-    cout << counter++ << ":err: " << err << endl;
+    cout << counterr++ << ":err: " << err << endl;
 
-    if (err < 0.01)
+    if (err < 0.00000001)
       break;
   }
 
@@ -57,15 +59,23 @@ int main()
 
   cout << "time for training: " << chrono::duration_cast<chrono::milliseconds>(end - begin).count() << endl;
 
-//  cout << "OUTPUT SIZE " << n.output.size() << endl;
+  n.setInput({0,0});
+  n.run();
+//  cout << "ans (0, 0): " << n.output.at(0) << " " << n.output.at(1) << endl;
+  cout << "ans (0, 0): " << n.output.at(0) << endl;
 
   n.setInput({1,0});
   n.run();
-//  cout << "OUTPUT SIZE after run " << n.output.size() << endl;
-  cout << "ans: " << n.output[0] << endl;
+//  cout << "ans (1, 0): " << n.output.at(0) << " " << n.output.at(1) << endl;
+  cout << "ans (1, 0): " << n.output.at(0) << endl;
+
+  n.setInput({0,1});
+  n.run();
+//  cout << "ans (0, 1): " << n.output.at(0) << " " << n.output.at(1) << endl;
+  cout << "ans (0, 1): " << n.output.at(0) << endl;
 
   n.setInput({1,1});
   n.run();
-//  cout << "OUTPUT SIZE after run " << n.output.size() << endl;
-  cout << "ans: " << n.output[0] << endl;
+//  cout << "ans (1, 1): " << n.output.at(0) << " " << n.output.at(1) << endl;
+  cout << "ans (1, 1): " << n.output.at(0) << endl;
 }

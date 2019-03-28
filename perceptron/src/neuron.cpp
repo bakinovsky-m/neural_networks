@@ -19,32 +19,40 @@ static double sigma(double x, bool deriv = false)
 static random_device rd;
 static default_random_engine rand_eng{rd()};
 
-HiddenNeuron::HiddenNeuron(const vector<shared_ptr<Neuron>> v){
+HiddenNeuron::HiddenNeuron(vector<shared_ptr<Neuron>> v){
   uniform_real_distribution<double> rand(0, 0.1);
+  v.push_back(make_shared<Bias>());
   for(auto el : v)
   {
-    inputs.push_back(el);
-    weights.push_back(rand(rand_eng));
+    inputs[el] = rand(rand_eng);
   }
 }
 
 double HiddenNeuron::output()
 {
-//  cout << "hid: " << inputs.size() << endl;
   double res = 0;
-  for(size_t i = 0; i < inputs.size(); ++i)
+  for(auto & el : inputs)
   {
-    res += inputs[i]->output() * weights[i];
+    res += el.first->output() * el.second;
   }
+
   return sigma(res);
 }
 
 void HiddenNeuron::renewFl(const std::vector<std::shared_ptr<FirstLayerNeuron>> neurons)
 {
-  inputs.clear();
-  for(auto el : neurons)
+  vector<double> weights;
+
+  auto inp_it = inputs.begin();
+  for(;inp_it != inputs.end(); ++inp_it)
   {
-    inputs.push_back(el);
+    weights.push_back(inp_it->second);
+  }
+
+  size_t i = 0;
+  for(auto fl_it = neurons.begin(); fl_it != neurons.end(); ++fl_it, ++i)
+  {
+    inputs[*fl_it] = weights[i];
   }
 }
 

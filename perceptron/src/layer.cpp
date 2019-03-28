@@ -6,13 +6,10 @@ HiddenLayer::HiddenLayer(Layer &l, const size_t n_count)
 {
   for(size_t i = 0; i < n_count; ++i)
   {
-    HiddenLayer ll = static_cast<HiddenLayer&>(l);
+//    HiddenLayer ll = static_cast<HiddenLayer&>(l);
     shared_ptr<HiddenNeuron> n = make_shared<HiddenNeuron>(l.neurons);
-//    for(auto nn : l.neurons)
-//    {
-//      n.inputs.push_back(nn);
+//    shared_ptr<HiddenNeuron> n (l.neurons);
     neurons.push_back(n);
-//    }
   }
 }
 

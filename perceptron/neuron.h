@@ -23,15 +23,19 @@ struct FirstLayerNeuron : Neuron
 
 struct HiddenNeuron : Neuron
 {
-  HiddenNeuron() = default;
+  HiddenNeuron() = delete;
   HiddenNeuron(const std::vector<std::shared_ptr<Neuron>>);
 
   virtual double output() override;
 
   void renewFl(const std::vector<std::shared_ptr<FirstLayerNeuron>> neurons);
 
-  std::vector<std::shared_ptr<Neuron>> inputs;
-  std::vector<double> weights;
+  std::map<std::shared_ptr<Neuron>, double> inputs;
+};
+
+struct Bias : Neuron
+{
+  virtual double output() override {return 1;}
 };
 
 #endif // HG_NEURON_H

@@ -8,7 +8,7 @@
 
 struct Network
 {
-  Network() = default;
+  Network() = delete;
   Network(const std::vector<double> & inp);
   void setInput(const std::vector<double> & inp);
   void addFirstLayer(const size_t neurons_count);
@@ -21,7 +21,8 @@ struct Network
   std::vector<double> input;
   std::vector<double> output;
   FirstLayer fl;
-  std::vector<HiddenLayer> layers;
+  std::vector<HiddenLayer> hidden_layers;
+//  HiddenLayer output_layer;
 };
 
 #endif // NETWORK_H
