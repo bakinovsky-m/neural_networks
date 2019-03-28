@@ -24,8 +24,9 @@ int main()
   Network n {{1, 0}};
 //  n.addLayer(5);
 //  n.addLayer(4);
+  n.addLayer(2);
 //  n.addLayer(3);
-//  n.addLayer(2);
+  n.addLayer(2);
   n.addLayer(1);
 
   auto begin = chrono::steady_clock::now();

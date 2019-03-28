@@ -66,9 +66,11 @@ double Network::train(const std::vector<double> target_output, const double nu)
 
     double n_out = nn->output();
     double err_i = pow(target_output[target_number] - n_out, 2);
+    nn->err = err_i;
     err_total += err_i;
 
     double gamma = -(target_output[target_number] - n_out) * n_out * (1 - n_out);
+    nn->gamma = gamma;
     for(auto &inp : nn->inputs)
     {
       double out_w = inp.first->output();
@@ -79,7 +81,25 @@ double Network::train(const std::vector<double> target_output, const double nu)
 
   for(auto ll = hidden_layers.rbegin() + 1; ll != hidden_layers.rend(); ++ll)
   {
+    for(auto & nn : ll->neurons)
+    {
+      shared_ptr<HiddenNeuron> n = dynamic_pointer_cast<HiddenNeuron>(nn);
+      double n_out = n->output();
+      double ho = n_out * (1 - n_out);
+      double gamma = 0;
+      for(auto & out_nn : (ll - 1)->neurons)
+      {
+        shared_ptr<HiddenNeuron> out_n = dynamic_pointer_cast<HiddenNeuron>(out_nn);
+        double weig = out_n->inputs.find(nn)->second;
+        gamma += out_n->gamma * weig;
+      }
 
+      for(auto & inp : n->inputs)
+      {
+        double delta = inp.first->output() * gamma * ho;
+        inp.second -= delta;
+      }
+    }
   }
 
 
