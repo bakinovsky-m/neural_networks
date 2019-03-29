@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <cmath>
+#include <iterator>
 
 using namespace std;
 
@@ -79,24 +80,36 @@ double Network::train(const std::vector<double> target_output, const double nu)
     }
   }
 
-  for(auto ll = hidden_layers.rbegin() + 1; ll != hidden_layers.rend(); ++ll)
+//  for(auto ll = (hidden_layers.rbegin() + 1); ll != hidden_layers.rend(); ++ll)
+//  for(auto ll = std::next(hidden_layers.rbegin(), 2); ll != hidden_layers.rend(); ++ll)
+  size_t qwe = hidden_layers.size();
+  int i = qwe - 2;
+  for(; i >= 0; --i)
   {
-    for(auto & nn : ll->neurons)
+    auto & ll = hidden_layers.at(i);
+//    for(auto & nn : ll->neurons)
+    for(auto & nn : ll.neurons)
     {
       shared_ptr<HiddenNeuron> n = dynamic_pointer_cast<HiddenNeuron>(nn);
       double n_out = n->output();
       double ho = n_out * (1 - n_out);
       double gamma = 0;
-      for(auto & out_nn : (ll - 1)->neurons)
+//      for(auto & out_nn : (ll - 1)->neurons)
+      for(auto & out_nn : hidden_layers.at(i+1).neurons)
       {
         shared_ptr<HiddenNeuron> out_n = dynamic_pointer_cast<HiddenNeuron>(out_nn);
         double weig = out_n->inputs.find(nn)->second;
         gamma += out_n->gamma * weig;
       }
 
+      n->gamma = gamma;
+
       for(auto & inp : n->inputs)
       {
-        double delta = inp.first->output() * gamma * ho;
+        double ifo = inp.first->output();
+//        if (ifo == 0)
+//          ifo = 1;
+        double delta = ifo * gamma * ho;
         inp.second -= delta;
       }
     }

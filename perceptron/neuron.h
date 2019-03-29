@@ -10,7 +10,7 @@ struct Neuron
   virtual double output() = 0;
   virtual ~Neuron();
   double err = 0;
-  double gamma = 0;
+  double gamma = 1;
 };
 
 struct FirstLayerNeuron : Neuron
