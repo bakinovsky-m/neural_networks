@@ -32,6 +32,7 @@ struct HiddenNeuron : Neuron
   void renewFl(const std::vector<std::shared_ptr<FirstLayerNeuron>> neurons);
 
   std::map<std::shared_ptr<Neuron>, double> inputs;
+  std::vector<double> new_ws;
 };
 
 struct Bias : Neuron

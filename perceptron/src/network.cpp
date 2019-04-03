@@ -72,30 +72,26 @@ double Network::train(const std::vector<double> target_output, const double nu)
 
     double gamma = -(target_output[target_number] - n_out) * n_out * (1 - n_out);
     nn->gamma = gamma;
+    size_t i = 0;
     for(auto &inp : nn->inputs)
     {
       double out_w = inp.first->output();
       double delta = nu * gamma * out_w;
-      inp.second -= delta;
+      nn->new_ws[i++] = inp.second - delta;
+//      inp.second -= delta;
     }
   }
 
-//  for(auto ll = (hidden_layers.rbegin() + 1); ll != hidden_layers.rend(); ++ll)
-//  for(auto ll = std::next(hidden_layers.rbegin(), 2); ll != hidden_layers.rend(); ++ll)
-  size_t qwe = hidden_layers.size();
-  int i = qwe - 2;
-  for(; i >= 0; --i)
+
+  for(auto ll = (hidden_layers.rbegin() + 1); ll != hidden_layers.rend(); ++ll)
   {
-    auto & ll = hidden_layers.at(i);
-//    for(auto & nn : ll->neurons)
-    for(auto & nn : ll.neurons)
+    for(auto & nn : ll->neurons)
     {
       shared_ptr<HiddenNeuron> n = dynamic_pointer_cast<HiddenNeuron>(nn);
       double n_out = n->output();
       double ho = n_out * (1 - n_out);
       double gamma = 0;
-//      for(auto & out_nn : (ll - 1)->neurons)
-      for(auto & out_nn : hidden_layers.at(i+1).neurons)
+      for(auto & out_nn : (ll - 1)->neurons)
       {
         shared_ptr<HiddenNeuron> out_n = dynamic_pointer_cast<HiddenNeuron>(out_nn);
         double weig = out_n->inputs.find(nn)->second;
@@ -104,13 +100,37 @@ double Network::train(const std::vector<double> target_output, const double nu)
 
       n->gamma = gamma;
 
+      size_t i = 0;
       for(auto & inp : n->inputs)
       {
         double ifo = inp.first->output();
-//        if (ifo == 0)
-//          ifo = 1;
         double delta = ifo * gamma * ho;
-        inp.second -= delta;
+        n->new_ws[i++] = inp.second - delta;
+//        inp.second -= delta;
+      }
+    }
+  }
+
+
+  for(auto n = hl.neurons.begin(); n != hl.neurons.end(); ++n)
+  {
+    shared_ptr<HiddenNeuron> nn = dynamic_pointer_cast<HiddenNeuron>(*n);
+    size_t i = 0;
+    for(auto &inp : nn->inputs)
+    {
+      inp.second = nn->new_ws[i++];
+    }
+  }
+
+  for(auto ll = (hidden_layers.rbegin() + 1); ll != hidden_layers.rend(); ++ll)
+  {
+    for(auto & nn : ll->neurons)
+    {
+      shared_ptr<HiddenNeuron> n = dynamic_pointer_cast<HiddenNeuron>(nn);
+      size_t i = 0;
+      for(auto & inp : n->inputs)
+      {
+        inp.second = n->new_ws[i++];
       }
     }
   }

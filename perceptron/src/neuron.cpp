@@ -25,6 +25,7 @@ HiddenNeuron::HiddenNeuron(vector<shared_ptr<Neuron>> v){
   for(auto el : v)
   {
     inputs[el] = rand(rand_eng);
+    new_ws.push_back(0);
   }
 }
 
