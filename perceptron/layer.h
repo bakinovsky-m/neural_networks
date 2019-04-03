@@ -22,6 +22,7 @@ struct FirstLayer : Layer
 struct HiddenLayer : Layer
 {
   HiddenLayer(Layer &l, const size_t n_count);
+  HiddenLayer(Layer &l, const std::vector<std::vector<double>> &weights, const size_t n_count);
 };
 
 #endif // LAYER_H

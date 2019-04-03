@@ -11,12 +11,16 @@ struct Network
   Network() = delete;
   Network(const std::vector<double> & inp);
   void setInput(const std::vector<double> & inp);
-  void addFirstLayer(const size_t neurons_count);
+//  void addFirstLayer(const size_t neurons_count);
   void addLayer(const size_t neurons_count);
   void run();
   double err(const std::vector<double> true_ans) const;
 
   double train(const std::vector<double> true_output, const double nu);
+
+  void saveToFile(const std::string & fname) const;
+
+  void loadFromFile(const std::string & fname);
 
   std::vector<double> input;
   std::vector<double> output;

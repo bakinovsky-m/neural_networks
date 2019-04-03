@@ -26,19 +26,21 @@ void printNNOut(const Network & n)
 
 int main()
 {
-//  uniform_real_distribution<double> rand (0.0001,1);
-  uniform_int_distribution<int> rand (0,1);
+  uniform_real_distribution<double> rand (0.0001,1);
+//  uniform_int_distribution<int> rand (0,1);
+//  uniform_int_distribution<int> rand (0,1);
 
 //  FLN fl {1};
 
   Network n {{1, 0}};
+//  Network n {{1}};
 //  n.addLayer(5);
   n.addLayer(2);
   n.addLayer(2);
-//  n.addLayer(4);
-//  n.addLayer(3);
-  n.addLayer(2);
-//  n.addLayer(1);
+  n.addLayer(4);
+//  n.addLayer(20);
+//  n.addLayer(2);
+  n.addLayer(1);
 
   auto begin = chrono::steady_clock::now();
 
@@ -48,19 +50,15 @@ int main()
 //    int cur_v1 = rand(rand_eng);
     double cur_v1 = rand(rand_eng);
 //    int cur_v2 = rand(rand_eng);
-    double cur_v2 = rand(rand_eng);
-    vector<double> v {cur_v1, cur_v2};
+//    double cur_v2 = rand(rand_eng);
+    vector<double> v {cur_v1};
+//    vector<double> v {cur_v1, cur_v2};
     n.setInput(v);
 
-//    double true_ans = (fabs(cur_v1 + cur_v2 - 1) < 0.01) ? 1.0 : 0;
-//    double true_ans = (cur_v1 == 1 && cur_v2 == 1) ? 1.0 : 0;
-//    double true_ans = 0;
-//    if((int)cur_v1 == 1 && (int)cur_v2 == 1)
-//      true_ans = 1;
-//    if(cur_v1 + cur_v2 < 0.001)
-//      true_ans = 1;
-//    double err = n.train({true_ans}, 1);
-    double err = n.train(v, 0.1);
+
+    double true_ans = (cur_v1 >= 0.5) ? 1.0 : 0.0;
+    double err = n.train({true_ans}, 0.5);
+//    double err = n.train(v, 0.5);
 
     cout << counterr++ << ":err: " << err << endl;
 
@@ -70,25 +68,68 @@ int main()
 
   auto end = chrono::steady_clock::now();
 
-  cout << "time for training: " << chrono::duration_cast<chrono::milliseconds>(end - begin).count() << endl;
+  cout << "time for training: " << chrono::duration_cast<chrono::milliseconds>(end - begin).count() << " msec" << endl;
 
-  n.setInput({0,0});
+//  n.setInput({0,0});
+//  n.run();
+//  cout << "ans (0, 0): ";
+//  printNNOut(n);
+
+//  n.setInput({1,0});
+//  n.run();
+//  cout << "ans (1, 0): ";
+//  printNNOut(n);
+
+//  n.setInput({0,1});
+//  n.run();
+//  cout << "ans (0, 1): ";
+//  printNNOut(n);
+
+//  n.setInput({1,1});
+//  n.run();
+//  cout << "ans (1, 1): ";
+//  printNNOut(n);
+
+  n.setInput({0.1});
   n.run();
-  cout << "ans (0, 0): ";
+  cout << "ans (1): ";
   printNNOut(n);
 
-  n.setInput({1,0});
+  n.setInput({0.3});
   n.run();
-  cout << "ans (1, 0): ";
+  cout << "ans (1): ";
   printNNOut(n);
 
-  n.setInput({0,1});
+  n.setInput({0.4});
   n.run();
-  cout << "ans (0, 1): ";
+  cout << "ans (1): ";
   printNNOut(n);
 
-  n.setInput({1,1});
+  n.setInput({0.6});
   n.run();
-  cout << "ans (1, 1): ";
+  cout << "ans (1): ";
+  printNNOut(n);
+
+  n.setInput({0.8});
+  n.run();
+  cout << "ans (1): ";
+  printNNOut(n);
+
+  n.saveToFile("tmp.nn");
+
+  n.loadFromFile("tmp.nn");
+
+  n.setInput({0.8});
+  n.run();
+  cout << "ans (1): ";
+  printNNOut(n);
+
+  n.saveToFile("tmp.nn");
+
+  n.loadFromFile("tmp.nn");
+
+  n.setInput({0.8});
+  n.run();
+  cout << "ans (1): ";
   printNNOut(n);
 }

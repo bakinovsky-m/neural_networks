@@ -30,6 +30,19 @@ HiddenNeuron::HiddenNeuron(const vector<shared_ptr<Neuron>> &v, const double bia
   inputs[b] = bias_w;
 }
 
+//HiddenNeuron::HiddenNeuron(const std::vector<std::shared_ptr<Neuron> > &v, const std::vector<double> &weights, const double bias_w)
+HiddenNeuron::HiddenNeuron(const std::vector<std::shared_ptr<Neuron> > &v, const std::vector<double> &weights)
+{
+  size_t i = 0;
+  for(auto &el : v)
+  {
+    inputs[el] = weights[i++];
+    new_ws.push_back(0);
+  }
+  auto b = make_shared<Bias>();
+  inputs[b] = weights[i];
+}
+
 double HiddenNeuron::output()
 {
   double res = 0;
@@ -39,23 +52,6 @@ double HiddenNeuron::output()
   }
 
   return sigma(res);
-}
-
-void HiddenNeuron::renewFl(const std::vector<std::shared_ptr<FirstLayerNeuron>> neurons)
-{
-  vector<double> weights;
-
-  auto inp_it = inputs.begin();
-  for(;inp_it != inputs.end(); ++inp_it)
-  {
-    weights.push_back(inp_it->second);
-  }
-
-  size_t i = 0;
-  for(auto fl_it = neurons.begin(); fl_it != neurons.end(); ++fl_it, ++i)
-  {
-    inputs[*fl_it] = weights[i];
-  }
 }
 
 double FirstLayerNeuron::output()

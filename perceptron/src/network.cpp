@@ -3,6 +3,8 @@
 #include <memory>
 #include <cmath>
 #include <iterator>
+#include <fstream>
+#include <sstream>
 
 using namespace std;
 
@@ -46,6 +48,7 @@ void Network::addLayer(const size_t neurons_count)
 
 void Network::run()
 {
+  output.resize(hidden_layers.back().neurons.size());
   for(size_t i = 0; i < output.size(); ++i)
   {
     auto l = hidden_layers.back();
@@ -141,4 +144,87 @@ double Network::train(const std::vector<double> target_output, const double nu)
 
 
   return err_total * 0.5;
+}
+
+void Network::saveToFile(const string & fname) const
+{
+  ofstream f;
+  f.open(fname);
+
+  f << fl.neurons.size() << endl;
+
+  f << hidden_layers.size() << endl;
+
+  for(auto &l : this->hidden_layers)
+  {
+    f << l.neurons.size() << endl;
+    for(auto & nn : l.neurons)
+    {
+      auto n = dynamic_pointer_cast<HiddenNeuron>(nn);
+      for(auto &nw : n->inputs)
+      {
+        f << nw.second << " ";
+      }
+      f << endl;
+    }
+  }
+
+  f.close();
+}
+
+void Network::loadFromFile(const string &fname)
+{
+  hidden_layers.clear();
+  ifstream f;
+  string s;
+  stringstream ss;
+  f.open(fname);
+
+  size_t fl_size = 0;
+
+  getline(f, s);
+  ss << s;
+  ss >> fl_size;
+
+  addLayer(fl_size);
+
+  size_t hidden_layers_count = 0;
+
+  getline(f, s);
+  ss.clear();
+  ss << s;
+  ss >> hidden_layers_count;
+
+  Layer prev = fl;
+
+  for(size_t i = 0; i < hidden_layers_count; ++i)
+  {
+    size_t layer_size = 0;
+    getline(f, s);
+    ss.clear();
+    ss << s;
+    ss >> layer_size;
+
+    vector<vector<double>> vv;
+
+    for(size_t j = 0; j < layer_size; ++j)
+    {
+      vector<double> v;
+      getline(f, s);
+      ss.clear();
+      ss << s;
+      for(size_t k = 0; k < fl_size + 1; ++k)
+      {
+        double cur = 0;
+        ss >> cur;
+        v.push_back(cur);
+      }
+      vv.push_back(v);
+    }
+    HiddenLayer hl{prev, vv, layer_size};
+    hidden_layers.push_back(hl);
+    fl_size = layer_size;
+  }
+
+  f.close();
 }

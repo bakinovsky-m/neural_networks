@@ -13,6 +13,15 @@ HiddenLayer::HiddenLayer(Layer &l, const size_t n_count)
   }
 }
 
+HiddenLayer::HiddenLayer(Layer &l, const std::vector<std::vector<double> > &weights, const size_t n_count)
+{
+  for(size_t i = 0; i < n_count; ++i)
+  {
+    shared_ptr<HiddenNeuron> n = make_shared<HiddenNeuron>(l.neurons, weights[i]);
+    neurons.push_back(n);
+  }
+}
+
 FirstLayer::FirstLayer(std::vector<std::shared_ptr<FirstLayerNeuron> > v_)
 {
   for(auto &el : v_)

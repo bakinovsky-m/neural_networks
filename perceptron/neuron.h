@@ -26,10 +26,12 @@ struct HiddenNeuron : Neuron
 {
   HiddenNeuron() = delete;
   HiddenNeuron(const std::vector<std::shared_ptr<Neuron>>&, const double bias_w=0.1);
+//  HiddenNeuron(const std::vector<std::shared_ptr<Neuron>>&, const std::vector<double> & weights, const double bias_w=0.1);
+  HiddenNeuron(const std::vector<std::shared_ptr<Neuron>>&, const std::vector<double> & weights);
 
   virtual double output() override;
 
-  void renewFl(const std::vector<std::shared_ptr<FirstLayerNeuron>> neurons);
+//  void renewFl(const std::vector<std::shared_ptr<FirstLayerNeuron>> neurons);
 
   std::map<std::shared_ptr<Neuron>, double> inputs;
   std::vector<double> new_ws;
