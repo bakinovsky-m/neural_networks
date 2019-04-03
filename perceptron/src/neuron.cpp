@@ -19,14 +19,15 @@ static double sigma(double x, bool deriv = false)
 static random_device rd;
 static default_random_engine rand_eng{rd()};
 
-HiddenNeuron::HiddenNeuron(vector<shared_ptr<Neuron>> v){
-  uniform_real_distribution<double> rand(0, 0.1);
-  v.push_back(make_shared<Bias>());
+HiddenNeuron::HiddenNeuron(const vector<shared_ptr<Neuron>> &v, const double bias_w){
+  uniform_real_distribution<double> rand(0.001, 0.1);
   for(auto el : v)
   {
     inputs[el] = rand(rand_eng);
     new_ws.push_back(0);
   }
+  auto b = make_shared<Bias>();
+  inputs[b] = bias_w;
 }
 
 double HiddenNeuron::output()
