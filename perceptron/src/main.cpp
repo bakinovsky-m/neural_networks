@@ -3,6 +3,7 @@
 #include <memory>
 #include <random>
 #include <chrono>
+#include <iomanip>
 
 #include "neuron.h"
 #include "layer.h"
@@ -14,6 +15,15 @@ using FLN = FirstLayerNeuron;
 static random_device rd;
 static default_random_engine rand_eng(rd());
 
+void printNNOut(const Network & n)
+{
+  for(auto & o : n.output)
+  {
+    cout << std::setprecision(1) << o << " ";
+  }
+  cout << endl;
+}
+
 int main()
 {
 //  uniform_real_distribution<double> rand (0.0001,1);
@@ -24,10 +34,11 @@ int main()
   Network n {{1, 0}};
 //  n.addLayer(5);
   n.addLayer(2);
-  n.addLayer(4);
-  n.addLayer(3);
   n.addLayer(2);
-  n.addLayer(1);
+//  n.addLayer(4);
+//  n.addLayer(3);
+  n.addLayer(2);
+//  n.addLayer(1);
 
   auto begin = chrono::steady_clock::now();
 
@@ -41,18 +52,19 @@ int main()
     vector<double> v {cur_v1, cur_v2};
     n.setInput(v);
 
-    double true_ans = (cur_v1 == 1 && cur_v2 == 1) ? 1.0 : 0;
+//    double true_ans = (fabs(cur_v1 + cur_v2 - 1) < 0.01) ? 1.0 : 0;
+//    double true_ans = (cur_v1 == 1 && cur_v2 == 1) ? 1.0 : 0;
 //    double true_ans = 0;
 //    if((int)cur_v1 == 1 && (int)cur_v2 == 1)
 //      true_ans = 1;
 //    if(cur_v1 + cur_v2 < 0.001)
 //      true_ans = 1;
-    double err = n.train({true_ans}, 1);
-//    double err = n.train(v, 0.1);
+//    double err = n.train({true_ans}, 1);
+    double err = n.train(v, 0.1);
 
     cout << counterr++ << ":err: " << err << endl;
 
-    if (err < 0.00000001)
+    if (err < 0.0001)
       break;
   }
 
@@ -62,21 +74,21 @@ int main()
 
   n.setInput({0,0});
   n.run();
-//  cout << "ans (0, 0): " << n.output.at(0) << " " << n.output.at(1) << endl;
-  cout << "ans (0, 0): " << n.output.at(0) << endl;
+  cout << "ans (0, 0): ";
+  printNNOut(n);
 
   n.setInput({1,0});
   n.run();
-//  cout << "ans (1, 0): " << n.output.at(0) << " " << n.output.at(1) << endl;
-  cout << "ans (1, 0): " << n.output.at(0) << endl;
+  cout << "ans (1, 0): ";
+  printNNOut(n);
 
   n.setInput({0,1});
   n.run();
-//  cout << "ans (0, 1): " << n.output.at(0) << " " << n.output.at(1) << endl;
-  cout << "ans (0, 1): " << n.output.at(0) << endl;
+  cout << "ans (0, 1): ";
+  printNNOut(n);
 
   n.setInput({1,1});
   n.run();
-//  cout << "ans (1, 1): " << n.output.at(0) << " " << n.output.at(1) << endl;
-  cout << "ans (1, 1): " << n.output.at(0) << endl;
+  cout << "ans (1, 1): ";
+  printNNOut(n);
 }
